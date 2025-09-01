@@ -57,17 +57,124 @@ ORDER BY EncounterYear, Length_of_Stay;
 -- OBJECTIVE 2: COST & COVERAGE INSIGHTS
 
 -- a. How many encounters had zero payer coverage, and what percentage of total encounters does this represent?
+SELECT COUNT(*) AS ZeroCoverage_Encounters,
+		ROUND(100.0 * COUNT(*)/ (SELECT COUNT(*) FROM encounters) ,0) AS pct_of_total
+FROM encounters e 
+WHERE e.PAYER_COVERAGE <= 0;
+
+-- a(i) ZeroCoverage_Encounters Class comparison:
+WITH coverage AS (SELECT 
+					CASE 
+						WHEN PAYER_COVERAGE <= 0 OR PAYER_COVERAGE IS NULL THEN "ZeroCover" ELSE "Covered" 
+						END AS Coverage_Status
+					FROM encounters)
+
+SELECT Coverage_Status, COUNT(*) Encounter_Count,
+		ROUND(100.0 * COUNT(*)/ (SELECT COUNT(*) FROM encounters) ,0) AS pct_of_total
+FROM coverage
+GROUP BY Coverage_Status 
+ORDER BY pct_of_total ;
 
 -- b. What are the top 10 most frequent procedures performed and the average base cost for each?
+SELECT  p.DESCRIPTION , COUNT(*) AS Encounter_Count,
+		ROUND(AVG(p.BASE_COST),2) AS Average_Cost
+FROM procedures p 
+GROUP BY DESCRIPTION 
+ORDER BY Encounter_Count DESC 
+LIMIT 10;
 
 -- c. What are the top 10 procedures with the highest average base cost and the number of times they were performed?
+SELECT  TRIM(LOWER(p.DESCRIPTION)) AS Descrption, ROUND(AVG(p.BASE_COST),2) AS Average_Cost,
+		COUNT(*) AS Encounter_Count
+FROM procedures p 
+GROUP BY DESCRIPTION 
+ORDER BY Average_Cost DESC 
+LIMIT 10;
 
 -- d. What is the average total claim cost for encounters, broken down by payer?
+SELECT e.ENCOUNTERCLASS, COUNT(*) AS Encounter_Count,
+	ROUND(AVG(e.TOTAL_CLAIM_COST),2) AS Average_Claim_Cost, 
+	p.NAME 
+FROM encounters e INNER JOIN payers p 
+ON e.PAYER = p.Id 
+GROUP BY e.ENCOUNTERCLASS;
 
 -- OBJECTIVE 3: PATIENT BEHAVIOR ANALYSIS
-
 -- a. How many unique patients were admitted each quarter over time?
-
+WITH qtr AS (SELECT STRFTIME("%Y", "START" ) AS EncounterYear,
+				COUNT(DISTINCT (e.Id)) AS Patient_Count, 
+				(CAST(STRFTIME("%m", "START" ) AS INT)-1)/3 + 1 AS EncounterQuarter 		
+			FROM encounters e 
+			WHERE LOWER(e.ENCOUNTERCLASS) = "inpatient"
+			GROUP BY EncounterYear, EncounterQuarter 
+			
+			)
+SELECT 	EncounterYear,
+		Patient_Count,
+		EncounterQuarter,
+		ROUND(100.0 * Patient_Count/ SUM(Patient_Count) 
+				OVER(PARTITION BY EncounterYear),2) AS pct_of_year
+FROM qtr 
+ORDER BY EncounterYear, EncounterQuarter ;
 -- b. How many patients were readmitted within 30 days of a previous encounter?
+WITH ordered AS (SELECT 	e.Id AS Encounter_Id, 
+							e. START, 
+							e. STOP, 
+							e. PATIENT,
+						ROW_NUMBER() 
+							OVER(PARTITION BY e.PATIENT ORDER BY START) AS rn
+					FROM encounters e 
+					WHERE e.START IS NOT NULL AND e.STOP IS NOT NULL
+),
+
+paired AS (
+			SELECT 	curr.PATIENT,
+					curr.Encounter_Id AS current_encounter,
+					curr."STOP" AS discharge_date,
+					nxt.Encounter_Id AS readmit_encounter,
+					nxt."START" AS Readmit_Date,
+					ROUND(JULIANDAY(nxt."START") - JULIANDAY(curr."STOP"),0) AS days_to_readmit
+			FROM ordered curr
+			LEFT JOIN ordered nxt
+				ON curr.PATIENT = nxt.PATIENT AND nxt.rn = curr.rn + 1
+		)
+SELECT 	PATIENT,
+		current_encounter,
+		discharge_date,
+		readmit_encounter,
+		days_to_readmit,
+		CASE WHEN days_to_readmit BETWEEN 0 AND 30 THEN 1 ELSE 0 END AS readmit_30d
+FROM paired
+ORDER BY PATIENT, discharge_date;
+		
+-----
+WITH ordered AS (SELECT 	e.Id AS Encounter_Id, 
+							e. START, 
+							e. STOP, 
+							e. PATIENT,
+						ROW_NUMBER() 
+							OVER(PARTITION BY e.PATIENT ORDER BY START) AS rn
+					FROM encounters e 
+					WHERE e.START IS NOT NULL AND e.STOP IS NOT NULL
+),
+
+paired AS (
+			SELECT 	curr.PATIENT,
+					curr.Encounter_Id AS current_encounter,
+					curr."STOP" AS discharge_date,
+					nxt.Encounter_Id AS readmit_encounter,
+					nxt."START" AS Readmit_Date,
+					ROUND(JULIANDAY(nxt."START") - JULIANDAY(curr."STOP"),0) AS days_to_readmit
+			FROM ordered curr
+			LEFT JOIN ordered nxt
+				ON curr.PATIENT = nxt.PATIENT AND nxt.rn = curr.rn + 1
+		)
+		
+SELECT 	SUM(days_to_readmit < 0) AS negatives,
+		SUM(days_to_readmit > 365) AS over_year
+FROM (paired);
+
+
+
 
 -- c. Which patients had the most readmissions?
