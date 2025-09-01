@@ -41,14 +41,25 @@ It highlights how data preprocessing, SQL exploration, and visualization can lea
 
 #### SQL Analysis
 **Encounters Overview**
-- Total encounters per year → Extract year with STRFTIME("%Y", column).
-- Encounters by class per year → Use CTEs and joins to calculate yearly totals and class distributions, then compute percentages.
-- Length of stay → Compute duration (in hours) per encounter, bucket into <24H vs >24H, and aggregate by year.
+1. Total encounters each year → Extract year with STRFTIME("%Y", column).
+2. Percentage of Encounters by Encounter class per year
+3. Length of stay (<24H vs >24H), aggregate by year.
 
 **Cost & Coverage**
-- Queries to assess payer coverage, procedure frequencies, and cost analysis using aggregation and ranking.
+1. Queries to assess payer coverage,
+2. procedure frequencies, and
+3. cost analysis using aggregation and ranking.
 
 **Patient Behavior**
-- Track quarterly admissions, identify 30-day readmissions, and highlight high-frequency patients.
+1. Track quarterly admissions
+- Interpretation & Decision Impact
+      - Quarter: strategic planning, budgets, seasonal programs.
+  
+      - Month: staffing templates, clinic schedules.
+      - Week: clinic rota balancing, outreach timing.
+      - Day/Hour: shift staffing, fast-track windows, lab/pharmacy coverage.
+  
+2. Identify 30-day readmissions.
+3. Highlight high-frequency patients.
 ---
 ✍️......
