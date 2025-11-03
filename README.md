@@ -1,97 +1,56 @@
-# Health Analytics Project
+# Encounter Insights: Patient and Ops Analytics
 
-This project demonstrates the importance of health analytics in evaluating hospital operations and patient experience using a synthetic dataset.
-It highlights how data preprocessing, SQL exploration, and visualization can lead to actionable insights in healthcare delivery.
+In today’s healthcare landscape, where patient-centered care and operational excellence are key to success, the Encounter Insights: Patient and Ops Analytics Project demonstrates the strategic value of health analytics. Using a comprehensive encounter dataset, the project evaluates critical aspects of hospital operations and patient experience, uncovering insights that can drive better service delivery and clinical outcomes.
 
----
-## **🔧 Tools & Technologies**
-
-- Python → Data preprocessing & database population
-- SQL → Data exploration & query analysis
+Through focused SQL-based analysis, complex data is transformed into actionable intelligence—tracing patient journeys, identifying satisfaction drivers, and highlighting efficiency gaps. These insights enable leadership to make informed, data-driven decisions that enhance performance, streamline workflows, and strengthen the overall patient experience
 
 ---
-## **🎯 Objectives**
+## **Dataset Overview**
 
-##### 1. Encounter Overview
+The analysis draws on a relational healthcare database,featuring five key tables that collectively capture the full patient encounter lifecycle:
 
-- How many total encounters occurred each year?
-  For each year, what percentage of encounters belonged to each encounter class
-  (ambulatory, outpatient, wellness, urgent care, emergency, inpatient)?
-- What percentage of encounters lasted over 24 hours vs under 24 hours?
+- Encounters Table: Records detailed visit information, including encounter dates, visit types, encounter reason, and associated costs—forming the foundation for operational and patient flow analysis.
 
-##### 2. Cost & Coverage Insights
-- How many encounters had zero payer coverage, and what percentage of total encounters does this represent?
-- What are the Top 10 most frequent procedures performed and their average base cost?
-- What are the Top 10 highest-cost procedures and the number of times they were performed?
-- What is the average total claim cost, broken down by payer?
+- Organization Table: Contains information on healthcare facilities, and addresses, enabling evaluation of performance across organizational structures.
 
-##### 3. Patient Behavior Analysis
-- How many unique patients were admitted each quarter over time?
-- How many patients were readmitted within 30 days of a previous encounter?
-- Which patients had the most readmissions?
+- Patient Table: Includes demographic and identification data that support segmentation and trend analysis across age, gender, and other patient characteristics.
+
+- Payer Table: Holds information on insurance types, coverage, and payment categories, providing insights into financial and reimbursement patterns.
+
+- Procedure Table: Details medical procedures performed during each encounter, facilitating analysis of treatment patterns, procedure utilization, and resource allocation
+
 ---
+## **🎯 Project Objectives**
 
+##### 1. Analyze Encounter Trends:
+- Examine the total number of patient encounters across years, identify the distribution of encounter types (such as outpatient, emergency, and inpatient), and assess the duration of visits to uncover patterns in hospital activity and service utilization.
+
+##### 2. Evaluate Cost and Coverage Dynamics:
+- Explore payer coverage rates, procedure costs, and claim distributions to reveal financial performance insights—highlighting high-cost procedures, common treatments, and gaps in insurance coverage.
+
+##### 3. Understand Patient Behavior and Readmissions:
+- Track patient admissions and readmissions over time to identify utilization trends, frequent readmissions, and potential areas for improving continuity of care and patient outcomes.
+
+---
 # **⚙️ Implementation**
+---
 
-## Data Preprocessing (Python)
-- Hospital dataset provided in two database tables (patients, payers) plus CSVs (encounters, organization, procedures).
-- Steps:
-  1. Load CSVs and append records into the hospital database.
-  2. Convert fields to correct data types (e.g., datetime).
-----
-## **SQL Analysis**
+### **Analyze Encounter Trends:**
 
-### **Encounters Overview**
+**A. Total number of patient encounters across years**
 
-**A. How many total encounters occurred each year?**
-
-Implementation Plan:
-  - Extract the year from the encounter date.
-  - Counted encounters per year.
-  - Grouped by year, sort chronologically.
-
-```sql
-SELECT STRFTIME("%Y", "START" ) AS EncounterYear,
-		COUNT(*) AS TotalEncounter
-FROM encounters
-GROUP BY STRFTIME("%Y", "START" ) 
-ORDER BY EncounterYear ;
-
-```
 **Output:**
 <img width="857" height="428" alt="image" src="https://github.com/user-attachments/assets/f1ebb1c4-ee17-42f5-9368-846f016ca21b" />
 
-Interpretation:
-- Rising encounters → higher demand, need for more staff/resources.
-- Falling encounters → could be access issues, patient leakage, or improved community health.
-- 
-Be aware of Data caveats: date quality (missing or incorrect timestamps), double entries, canceled visits.
+**Insights:**
+
+Over the years, patient encounters have shown a steady upward trend, reflecting growing demand for healthcare services. Notably, **2014** and **2021** stood out with sharp increases—reaching **3,885** and **3,530 encounters** respectively—highlighting periods of heightened activity that likely required additional staffing and operational resources.
+
+However, **2022** marked a striking drop to just **220 encounters**, the lowest point in the decade. This sudden decline may point to reduced access to care, patient leakage to other facilities, or even improvements in community health that lowered the need for hospital visits. Together, these trends tell a story of evolving patient engagement and shifting service demand over time.
                  
-**B. Percentage of Encounters by Encounter class per year**
 
-Implementation Plan:
-  - Get total encounters per year and class.
-  - Get total encounters per year.
-  - Divided class counts by year totals to compute percentages.
-  - Return a year–class–percentage table.
+**B. Distribution of encounter types**
 
-```sql
-WITH class_count AS (SELECT STRFTIME("%Y", "START" ) AS EncounterYear,
-						COUNT(*) AS ClassEncounter_Count, ENCOUNTERCLASS 
-						FROM encounters
-						GROUP BY STRFTIME("%Y", "START" ), ENCOUNTERCLASS),
-
-	total_count AS (SELECT STRFTIME("%Y", "START" ) AS EncounterYear,
-						COUNT(*) AS TotalEncounter
-						FROM encounters
-						GROUP BY STRFTIME("%Y", "START")
-)
-SELECT c.EncounterYear, c.ENCOUNTERCLASS,
-		ROUND(100.0* c.ClassEncounter_Count/t.TotalEncounter,2) AS pct_of_totalencounter
-FROM class_count c JOIN total_count t
-ON c.EncounterYear = t.EncounterYear
-ORDER BY t.EncounterYear, pct_of_totalencounter;
-```
 **Output:**
 <img width="1017" height="342" alt="image" src="https://github.com/user-attachments/assets/aa96ccac-be5e-45c8-99fc-97fbb8648414" />
 
