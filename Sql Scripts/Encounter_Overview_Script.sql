@@ -1,6 +1,3 @@
--- Connect to database (MySQL only)
-USE hospital_db;
-
 -- OBJECTIVE 1: ENCOUNTERS OVERVIEW
 
 -- a. How many total encounters occurred each year?
@@ -9,6 +6,7 @@ SELECT STRFTIME("%Y", "START" ) AS EncounterYear,
 FROM encounters
 GROUP BY STRFTIME("%Y", "START" ) 
 ORDER BY EncounterYear ;
+
 
 -- b. For each year, what percentage of all encounters belonged to each encounter class
 -- (ambulatory, outpatient, wellness, urgent care, emergency, and inpatient)?
@@ -27,6 +25,7 @@ SELECT c.EncounterYear, c.ENCOUNTERCLASS,
 FROM class_count c JOIN total_count t
 ON c.EncounterYear = t.EncounterYear
 ORDER BY t.EncounterYear, pct_of_totalencounter;
+
 
 -- c. What percentage of encounters were over 24 hours versus under 24 hours?
 WITH duration AS (SELECT STRFTIME("%Y", "START" ) AS EncounterYear,

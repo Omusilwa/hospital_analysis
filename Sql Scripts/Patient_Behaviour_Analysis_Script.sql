@@ -15,6 +15,7 @@ SELECT 	EncounterYear,
 				OVER(PARTITION BY EncounterYear),2) AS pct_of_year
 FROM qtr 
 ORDER BY EncounterYear, EncounterQuarter ;
+
 -- b. How many patients were readmitted within 30 days of a previous encounter?
 WITH ordered AS (SELECT 	e.Id AS Encounter_Id, 
 							e. START, 
