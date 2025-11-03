@@ -37,71 +37,46 @@ The analysis draws on a relational healthcare database,featuring five key tables
 
 ### **Analyze Encounter Trends:**
 
-**A. Total number of patient encounters across years**
+**A). Total number of patient encounters across years**
 
 **Output:**
 <img width="857" height="428" alt="image" src="https://github.com/user-attachments/assets/f1ebb1c4-ee17-42f5-9368-846f016ca21b" />
 
 **Insights:**
 
-Over the years, patient encounters have shown a steady upward trend, reflecting growing demand for healthcare services. Notably, **2014** and **2021** stood out with sharp increases—reaching **3,885** and **3,530 encounters** respectively—highlighting periods of heightened activity that likely required additional staffing and operational resources.
+Over the years, patient encounters have shown a steady upward trend, reflecting growing demand for healthcare services. Notably, `2014` and `2021` stood out with sharp increases, reaching `3,885` and `3,530 encounters` respectively highlighting periods of heightened activity that likely required additional staffing and operational resources.
 
-However, **2022** marked a striking drop to just **220 encounters**, the lowest point in the decade. This sudden decline may point to reduced access to care, patient leakage to other facilities, or even improvements in community health that lowered the need for hospital visits. Together, these trends tell a story of evolving patient engagement and shifting service demand over time.
-                 
+However, `2022` marked a striking drop to just `220 encounters`, the lowest point in the decade. This sudden decline may point to reduced access to care, patient leakage to other facilities, or even improvements in community health that lowered the need for hospital visits. Together, these trends tell a story of evolving patient engagement and shifting service demand over time.
 
-**B. Distribution of encounter types**
+---
+
+**B). Distribution of encounter types**
 
 **Output:**
-<img width="1017" height="342" alt="image" src="https://github.com/user-attachments/assets/aa96ccac-be5e-45c8-99fc-97fbb8648414" />
-
-Interpretation:
-- A high emergency or urgent care % might indicate access barriers to primary care.
-- Rising inpatient % could suggest sicker patient populations or poor outpatient management.
-
-Watch for missing or unknown classes for this may dilute percentages.
+<img width="802" height="637" alt="image" src="https://github.com/user-attachments/assets/ec04d7ff-94a6-46a6-8035-602bab7e711f" />
 
 
-**C. Peecentage of encounters, over 24 hours versus under 24 hours**
+**Insights:**
 
-Implementation Plan:
-- Computed duration per encounter in hours.
-- Bucket into <24h vs ≥24h.
-- Aggregated counts by bucket.
-- Used a window to compute the percentage share.
+Over the years, **Ambulatory** and **Outpatient encounters** have consistently dominated care delivery, accounting for nearly `60%` and `40%` of total encounters, respectively. This strong presence reflects a growing preference for cost-effective, convenient care often linked to same-day procedures, diagnostics, and integrated care networks that keep patients out of the hospital.
 
-```sql
-WITH duration AS (SELECT STRFTIME("%Y", "START" ) AS EncounterYear,
-							ROUND((JULIANDAY("STOP") -JULIANDAY("START"))*24,2) AS hours_stayed
-						FROM encounters e 
-						WHERE START IS NOT NULL AND STOP IS NOT NULL),
+Meanwhile, **Urgent Care** and **Wellness** visits remain below `20%` and `10%`, and **Inpatient encounters** have dropped to under `5%`. Together, these figures tell a powerful story: healthcare delivery is shifting toward prevention, early intervention, and shorter or home-based care models. The trend underscores success in reducing admissions while meeting patients where they are—more efficiently, and often more effectively.
 
-buckets_24hr AS (SELECT EncounterYear,
-				 CASE WHEN hours_stayed >= 24.0 THEN ">24H" ELSE "<24H" END AS Length_of_Stay
-				FROM duration),
-		
-yr_agg AS (SELECT EncounterYear, 
-					Length_of_Stay,
-					COUNT(*) AS Encounter_Count
-			FROM buckets_24hr 
-			GROUP BY EncounterYear, Length_of_Stay
-	)
+---
 
-SELECT EncounterYear, 
-		Length_of_Stay,
-		ROUND(100.0 * Encounter_Count/
-				SUM(Encounter_Count) 
-				OVER(PARTITION BY EncounterYear),2) AS pct_of_total
-FROM yr_agg
-ORDER BY EncounterYear, Length_of_Stay;
-```
+**C). Duration of visits**
+
 **Output:**
-<img width="1022" height="342" alt="image" src="https://github.com/user-attachments/assets/7febc5c6-1ec0-4f69-b2dc-5f44122d5f84" />
 
-Interpretation:
-- High `≥24h` share → more bed-days, higher inpatient load; investigate admission criteria and discharge processes.
-- If `<24h` dominates, throughput is high or case mix is ambulatory/ED fast-track heavy.
+<img width="642" height="702" alt="image" src="https://github.com/user-attachments/assets/b067e824-cee0-4164-af7d-6dd62bfbd746" />
 
-Watch out for  missing/NULL timestamps, timezone inconsistencies.  Consider outlier caps and audits.
+
+
+**Insights:**
+
+The data reveals that the average length of stay (LOS) for most encounters is less than `24 hours`, accounting for over `95%` of all visits, while only `5%` or fewer extend beyond a full day. This short stay pattern aligns closely with the high proportion of `Ambulatory` and `Outpatient` encounters, which together make up the majority of hospital activity.
+
+The correlation suggests a healthcare model increasingly focused on efficient same-day care, where diagnostics, minor procedures, and treatments are completed without the need for extended hospitalization. This trend not only enhances patient convenience but also reflects the system’s success in managing capacity, reducing costs, and emphasizing preventive and coordinated care pathways that minimize unnecessary admissions
 
 ----
 
