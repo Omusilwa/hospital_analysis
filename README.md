@@ -79,87 +79,26 @@ The data reveals that the average length of stay (LOS) for most encounters is le
 The correlation suggests a healthcare model increasingly focused on efficient same-day care, where diagnostics, minor procedures, and treatments are completed without the need for extended hospitalization. This trend not only enhances patient convenience but also reflects the system’s success in managing capacity, reducing costs, and emphasizing preventive and coordinated care pathways that minimize unnecessary admissions
 
 ----
+----
 
-### **Cost & Coverage**
+##### 2. Evaluate Cost and Coverage Dynamics:
 
-This analysis complements the story by showing what is most common, what is most expensive, and who pays—and how much.
+**A). Explore payer coverage rates**
 
-**A. Queries to assess payer coverage and percentage of total encounter each represent.**
-
-Implementation
-
-Query 1 – Overall zero coverage & % of all encounters
-
-  - Filter encounters where `payer_coverage` <= 0.
-  - Count those encounters.
-  - Divided by all encounters to get the overall percentage.
-  - Round to a presentable integer.
-
-```sql
-SELECT COUNT(*) AS ZeroCoverage_Encounters,
-		ROUND(100.0 * COUNT(*)/ (SELECT COUNT(*) FROM encounters) ,0) AS pct_of_total
-FROM encounters e 
-WHERE e.PAYER_COVERAGE <= 0;
-```
 **Output:**
-<img width="938" height="138" alt="image" src="https://github.com/user-attachments/assets/bcaaabd3-cb0b-4dfa-ab8f-3493e8934ebd" />
 
-
-Query 2 – Compare “ZeroCover” vs “Covered”
-
-  - Bucket each encounter into `ZeroCover` vs `Covered` in a CTE.
-  - Divide each bucket by all encounters (same denominator) to make shares comparable.
-  - Group by `Coverage_Status` and count.
-  - Order by percentage or by status for stable presentation.
-
-```sql
-WITH coverage AS (SELECT 
-					CASE 
-						WHEN PAYER_COVERAGE <= 0 OR PAYER_COVERAGE IS NULL THEN "ZeroCover" ELSE "Covered" 
-						END AS Coverage_Status
-					FROM encounters)
-
-SELECT Coverage_Status, COUNT(*) Encounter_Count,
-		ROUND(100.0 * COUNT(*)/ (SELECT COUNT(*) FROM encounters) ,0) AS pct_of_total
-FROM coverage
-GROUP BY Coverage_Status 
-ORDER BY pct_of_total ;
-```
-**Output:**
 <img width="1043" height="285" alt="image" src="https://github.com/user-attachments/assets/edca2be6-e461-407d-890e-92b3c4d1f964" />
 
-Interpretation:
-- Overall % `ZeroCover`: High share - larger uncompensated-care burden; expect bad debt/charity care to rise.
-- Low share - more reimbursable workload; better revenue stability.
+**Insight:**
 
-**B. Top 10 most frequent procedures**
+Nearly half `(49%)` of encounters are not covered, representing a major opportunity to  reduce out-of-pocket costs for patients. Addressing this gap could enhance both care access and financial performance
 
-Implementation:
-    - Aggregate by `DESCRIPTION` from procedures.
-    - Count rows = frequency of each procedure.
-    - Compute average `BASE_COST`.
-    - Order by frequency descending.
-    - Limit output to 10 rows.
+**B). Procedure costs**
 
-```sql
--- b. Top 10 most frequent procedures performed and the average base cost for each?
-SELECT  p.DESCRIPTION , COUNT(*) AS Encounter_Count,
-		ROUND(AVG(p.BASE_COST),2) AS Average_Cost
-FROM procedures p 
-GROUP BY DESCRIPTION 
-ORDER BY Encounter_Count DESC 
-LIMIT 10;
-```
 **Output:**
 <img width="1080" height="342" alt="image" src="https://github.com/user-attachments/assets/0fc12b7c-58b4-4dcb-a7b6-df833736c508" />
 
-Interpretation
-
-- Most frequent procedures;
-    - Shows workload drivers: what the hospital does most often.
-    - Often these are routine, lower-cost interventions.
-      
-High frequency may point to resource allocation needs (staff, supplies).
+**Insights:**
 
 **C.Top 10 highest average-cost procedures**
 
