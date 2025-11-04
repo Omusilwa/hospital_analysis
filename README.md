@@ -96,28 +96,6 @@ Nearly half `(49%)` of encounters are not covered, representing a major opportun
 **B). Procedure costs**
 
 **Output:**
-<img width="1080" height="342" alt="image" src="https://github.com/user-attachments/assets/0fc12b7c-58b4-4dcb-a7b6-df833736c508" />
-
-**Insights:**
-
-**C.Top 10 highest average-cost procedures**
-
-Implementation:
-
-- Normalize `DESCRIPTION` (e.g., `TRIM(LOWER(...))`) to reduce duplicates from inconsistent casing.
-- Compute average `BASE_COST` and encounter count.
-- Order by average cost descending.
-- Limit output to 10 rows
-  
-```sql
-SELECT  TRIM(LOWER(p.DESCRIPTION)) AS Descrption, ROUND(AVG(p.BASE_COST),2) AS Average_Cost,
-		COUNT(*) AS Encounter_Count
-FROM procedures p 
-GROUP BY DESCRIPTION 
-ORDER BY Average_Cost DESC 
-LIMIT 10;
-```
-**Output:**
 <img width="1187" height="346" alt="image" src="https://github.com/user-attachments/assets/125c9cf7-a259-4609-9a51-64d6fc86d88c" />
 
 Interpretation:
@@ -130,20 +108,6 @@ Useful for budgeting, negotiation with payers, and identifying candidates for co
 
 **D. Average claim cost per payer and encounter class**
 
-Implementation
-- Join `encounters` to `payers` on `payer_id`.
-- Group by `ENCOUNTERCLASS`.
-- Count encounters and compute average `TOTAL_CLAIM_COST`.
-- Present payer + encounter class breakdown.
-
-```sql
-SELECT e.ENCOUNTERCLASS, COUNT(*) AS Encounter_Count,
-	ROUND(AVG(e.TOTAL_CLAIM_COST),2) AS Average_Claim_Cost, 
-	p.NAME 
-FROM encounters e INNER JOIN payers p 
-ON e.PAYER = p.Id 
-GROUP BY e.ENCOUNTERCLASS;
-````
 **Output:**
 <img width="1022" height="275" alt="image" src="https://github.com/user-attachments/assets/6f5d03e7-521b-4c71-a97d-0a5da9aba15f" />
 
