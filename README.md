@@ -40,7 +40,8 @@ The analysis draws on a relational healthcare database,featuring five key tables
 **A). Total number of patient encounters across years**
 
 **Output:**
-<img width="857" height="428" alt="image" src="https://github.com/user-attachments/assets/f1ebb1c4-ee17-42f5-9368-846f016ca21b" />
+
+<img width="465" height="400" alt="image" src="https://github.com/user-attachments/assets/705e0b9a-208c-4a7c-96ee-2940e7113d29" />
 
 **Insights:**
 
@@ -53,8 +54,8 @@ However, `2022` marked a striking drop to just `220 encounters`, the lowest poin
 **B). Distribution of encounter types**
 
 **Output:**
-<img width="802" height="637" alt="image" src="https://github.com/user-attachments/assets/ec04d7ff-94a6-46a6-8035-602bab7e711f" />
 
+<img width="718" height="487" alt="image" src="https://github.com/user-attachments/assets/66d470ac-d6a7-4234-b307-25a8cc754d78" />
 
 **Insights:**
 
@@ -68,9 +69,7 @@ Meanwhile, **Urgent Care** and **Wellness** visits remain below `20%` and `10%`,
 
 **Output:**
 
-<img width="642" height="702" alt="image" src="https://github.com/user-attachments/assets/b067e824-cee0-4164-af7d-6dd62bfbd746" />
-
-
+<img width="733" height="487" alt="image" src="https://github.com/user-attachments/assets/63a626ee-ab2f-4129-bc5c-45ab321c7d3c" />
 
 **Insights:**
 
@@ -81,13 +80,13 @@ The correlation suggests a healthcare model increasingly focused on efficient sa
 ----
 ----
 
-##### 2. Evaluate Cost and Coverage Dynamics:
+### 2. Evaluate Cost and Coverage Dynamics:
 
 **A). Explore payer coverage rates**
 
 **Output:**
 
-<img width="1043" height="285" alt="image" src="https://github.com/user-attachments/assets/edca2be6-e461-407d-890e-92b3c4d1f964" />
+<img width="753" height="157" alt="image" src="https://github.com/user-attachments/assets/9e341eab-7c08-419c-b955-598de5cf5e07" />
 
 **Insight:**
 
@@ -96,142 +95,52 @@ Nearly half `(49%)` of encounters are not covered, representing a major opportun
 **B). Procedure costs**
 
 **Output:**
+
 <img width="1187" height="346" alt="image" src="https://github.com/user-attachments/assets/125c9cf7-a259-4609-9a51-64d6fc86d88c" />
 
-Interpretation:
+**Insight:**
 
-- Highest-cost procedures
-    - Identifies financially intensive services.
-    - These may not occur often but heavily impact costs/revenue.
-      
-Useful for budgeting, negotiation with payers, and identifying candidates for cost-control strategies.
+Some procedures, though performed infrequently, exert a major influence on the institution’s overall financial picture. They represent significant cost and revenue drivers that require close attention for budgeting, payer negotiations, and cost-control planning.
 
-**D. Average claim cost per payer and encounter class**
+For instance, the most expensive procedure, `Admission to ICU` incurred a total cost of `$206,260.4` from just `15 encounters`. This single case highlights how a small number of high-cost events can substantially affect operating margins and resource allocation
+
+**D). Exploring Claim Cost**
 
 **Output:**
+
 <img width="1022" height="275" alt="image" src="https://github.com/user-attachments/assets/6f5d03e7-521b-4c71-a97d-0a5da9aba15f" />
 
-Interpretation:
-- Average claim cost by payer & encounter class;
-    - Compares utilization and cost patterns across payer contracts.
-    - High averages may reflect sicker patients, higher procedure intensity, or inefficient care delivery.
+**Insights:**
 
-Useful for financial planning and payer negotiations: some payers may systematically reimburse lower/higher amounts.
+Claim Cost reveals an important trend: most `ambulatory`, `wellness` and `outpatient` visits occur without insurance coverage. These represent out-of-pocket payments, forming the largest share of all encounters in the institution. This pattern not only highlights patients’ financial burden but also underscores potential gaps in coverage accessibility.
 
-Encounter class split (inpatient vs outpatient vs ED) shows where costs concentrate.
+On the other hand, `inpatient`, `urgent care`, and `emergency` encounters, typically unplanned and high-cost are more likely to be covered. This makes sense, as these are critical, unscheduled events where insurance protection truly matters.
+
+These insights are valuable for financial planning and payer negotiations. Understanding which services are most often uncovered, and which payers systematically reimburse higher or lower amounts can guide more balanced contract strategies and help strengthen the institution’s financial resilience
 
 -----
+-----
 
-### **Patient Behavior**
+### **3. Patient Behavior**
 
-**A. Unique patients admitted each quarter over time**
+**A). Quarterly Trend in Unique Patient Admissions**
 
-Implementation plan
-
-  1. Extract `EncounterYear` from `START` (admission date).
-  2. Compute quarter: `(month – 1)/3 + 1`.
-  3. Filter for inpatient encounters (`LOWER(encounterclass) = 'inpatient'`).
-  4. Count unique patients per year–quarter (`COUNT(DISTINCT Id`)
-  5. Use a window function to calculate the % of yearly admissions each quarter contributed.
-  6.  Order results by year and quarter.
-
-```sql
-WITH qtr AS (SELECT STRFTIME("%Y", "START" ) AS EncounterYear,
-				COUNT(DISTINCT (e.Id)) AS Patient_Count, 
-				(CAST(STRFTIME("%m", "START" ) AS INT)-1)/3 + 1 AS EncounterQuarter 		
-			FROM encounters e 
-			WHERE LOWER(e.ENCOUNTERCLASS) = "inpatient"
-			GROUP BY EncounterYear, EncounterQuarter 
-			
-			)
-SELECT 	EncounterYear,
-		Patient_Count,
-		EncounterQuarter,
-		ROUND(100.0 * Patient_Count/ SUM(Patient_Count) 
-				OVER(PARTITION BY EncounterYear),2) AS pct_of_year
-FROM qtr 
-ORDER BY EncounterYear, EncounterQuarter ;
-```
 **Output**
-<img width="913" height="337" alt="image" src="https://github.com/user-attachments/assets/6ff06ee5-8210-496b-9074-1008b3139b2f" />
 
-Interpretation
+<img width="767" height="488" alt="image" src="https://github.com/user-attachments/assets/d5136c9a-f8c3-4a05-8ba8-c660ae205aed" /> 
 
-- Shows seasonality of admissions.
-    - pct_of_year highlights distribution—if Q3 = 40%, capacity/staffing may need to shift.
-    - Outliers (very low/high quarter %s) can indicate unusual events (e.g., epidemics, policy change).
+**Insights:**
+
+Tracking unique patient admissions each quarter reveals uncovers the rhythm of care within the institution. These patterns reflect seasonal shifts in disease prevalence, helping us understand when demand peaks and how to align resources and staffing accordingly.
+
+On average, unique admissions account for about `35%` year-on-year, but certain quarters stand out. For example, `Q4 of 2013` and `2016` recorded unusually high admissions; `52% and 51%` respectively, while `Q4 of 2019` saw a steep drop to just `6.7%`. These fluctuations act as signals, pointing to possible external factors such as epidemic outbreaks, policy changes, or service delivery shifts.
+
+Recognizing and preparing for these cycles can help the organization optimize capacity, ensure adequate staffing, and improve readiness for unexpected surges or downturns in patient demand.
+
 
 
 **B. Patients readmitted within 30 days**
 
-Implementation plan
-
-1. Use ROW_NUMBER() to order encounters chronologically per patient.
-2. Self-join each encounter with its next for the same patient.
-3. Calculate gap: JULIANDAY(next.START) - JULIANDAY(curr.STOP).
-4. Flag if gap is BETWEEN 0 AND 30.
-5. Return index encounter, discharge date, readmit encounter, readmit date, and readmit flag.
-6. (validation): Additional query checks negatives (bad timestamp order) and >365d gaps (potential outliers or long gaps).
-
-```sql
--- b. How many patients were readmitted within 30 days of a previous encounter?
-WITH ordered AS (SELECT 	e.Id AS Encounter_Id, 
-							e. START, 
-							e. STOP, 
-							e. PATIENT,
-						ROW_NUMBER() 
-							OVER(PARTITION BY e.PATIENT ORDER BY START) AS rn
-					FROM encounters e 
-					WHERE e.START IS NOT NULL AND e.STOP IS NOT NULL
-),
-
-paired AS (
-			SELECT 	curr.PATIENT,
-					curr.Encounter_Id AS current_encounter,
-					curr."STOP" AS discharge_date,
-					nxt.Encounter_Id AS readmit_encounter,
-					nxt."START" AS Readmit_Date,
-					ROUND(JULIANDAY(nxt."START") - JULIANDAY(curr."STOP"),0) AS days_to_readmit
-			FROM ordered curr
-			LEFT JOIN ordered nxt
-				ON curr.PATIENT = nxt.PATIENT AND nxt.rn = curr.rn + 1
-		)
-SELECT 	PATIENT,
-		current_encounter,
-		discharge_date,
-		readmit_encounter,
-		days_to_readmit,
-		CASE WHEN days_to_readmit BETWEEN 0 AND 30 THEN 1 ELSE 0 END AS readmit_30d
-FROM paired
-ORDER BY PATIENT, discharge_date;
-```
-```sql
-WITH ordered AS (SELECT 	e.Id AS Encounter_Id, 
-							e. START, 
-							e. STOP, 
-							e. PATIENT,
-						ROW_NUMBER() 
-							OVER(PARTITION BY e.PATIENT ORDER BY START) AS rn
-					FROM encounters e 
-					WHERE e.START IS NOT NULL AND e.STOP IS NOT NULL
-),
-
-paired AS (
-			SELECT 	curr.PATIENT,
-					curr.Encounter_Id AS current_encounter,
-					curr."STOP" AS discharge_date,
-					nxt.Encounter_Id AS readmit_encounter,
-					nxt."START" AS Readmit_Date,
-					ROUND(JULIANDAY(nxt."START") - JULIANDAY(curr."STOP"),0) AS days_to_readmit
-			FROM ordered curr
-			LEFT JOIN ordered nxt
-				ON curr.PATIENT = nxt.PATIENT AND nxt.rn = curr.rn + 1
-		)
-		
-SELECT 	SUM(days_to_readmit < 0) AS negatives,
-		SUM(days_to_readmit > 365) AS over_year
-FROM (paired);
-```
 
 Interpretation
 
